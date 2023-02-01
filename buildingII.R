@@ -75,7 +75,9 @@ tbl_run <-
     #)
     ,
     sep = "_"
-  ))
+  ),
+  soil=fct_cross(soiltype,soilCinit,
+                 sep = "_"))
 
 #Parameters list----
 #inp$`[Parameters]`
@@ -237,11 +239,13 @@ tbl_run <-
     # Plant C14
     "FOMfractionPlantTopLayerC14"= FOMfractionPlantTopLayer,
     "FOMfractionPlantLowerLayerC14"= FOMfractionPlantLowerLayer
-  ) |> 
+  ) 
+
+tbl_run_test <- tbl_run |> 
   mutate(
     HI = as.numeric(
-      fct_recode(
-        'Crop',
+      recode(
+        Crop,
         'Grain' = 0.75,
         'Grass' = 0.70,
         'Maize' = 0.85,
@@ -249,8 +253,8 @@ tbl_run <-
       )
     ),
     SB = as.numeric(
-      fct_recode(
-        'Crop',
+      recode(
+        Crop,
         'Grain' = 0,
         'Grass' = 0,
         'Maize' = 0,
@@ -258,8 +262,8 @@ tbl_run <-
       )
     ),
     RB = as.numeric(
-      fct_recode(
-        'Crop',
+      recode(
+        Crop,
         'Grain' = 0.17,
         'Grass' = 0.45,
         'Maize' = 0.15,
@@ -267,18 +271,19 @@ tbl_run <-
       )
     ),
     RE =as.numeric(
-      fct_recode(
-        'Crop',
+      recode(
+        Crop,
         'Grain' = 0.8,
         'Grass' = 0.9,
         'Maize' = 0.8,
         'Pulses' = 0.8 #from Soy bean
       )
-    )
-  ) |> 
-  mutate(yield_MC= yield_MC/1000,
-         yield_CC=C_manure/1000,
-         C_manure/1000) |> 
+    ),
+    yield_MC= ifelse(is.na(yield_MC), 0 , yield_MC/1000),
+    
+    yield_CC=ifelse(is.na(yield_CC), 0 , yield_CC/1000),
+    
+    C_manure=if_else(is.na(C_manure),0,C_manure/1000)) |> 
   mutate(
     'Cresid'=as.numeric(((1/HI)-1-SB)*(yield_MC*0.43)),
     'Cresid_cc'=as.numeric(((1/HI)-1-SB)*(yield_CC*0.43)),
@@ -287,7 +292,7 @@ tbl_run <-
     'Cbelow_cc'=as.numeric((RB/((1-RB)*HI))*(yield_CC*0.43))
   ) |>  
   mutate(
-    'Ctop'=ifelse(Cresid<0,0+(RE*Cbelow),Cresid+(RE*Cbelow))+
+    'Ctop'=ifelse(Cresid<0,0+(RE*Cbelow),Cresid+(RE*Cbelow)) +
       ifelse(Cresid_cc<0,0+(RE*Cbelow_cc),Cresid_cc+(RE*Cbelow_cc)),
     
     'Csub'=(1-RE)*Cbelow+(1-RE)*Cbelow_cc,
