@@ -1,24 +1,33 @@
 library(tidyverse)
 
-# Crop rotation from Troels
+# Crop rotation from Troels ----
 
+# Initialization period
+# arable land 
 
+init_landuse <- c("SB","WW","GC")
 
-crop_rot <- read.table("data/long_juan.txt", 
-                       header =T, dec= ".", sep="\t",
-                       na.strings = ".") 
+burn_init <- c("10","30","100")
 
-init_tbl <- data.frame(rot_cycle=c(rep(10,10),rep(30,30),rep(100,100)),
-  "year"=c(seq(2000 - 10, 2000 - 1, 1),
-           seq(2000 - 30, 2000 - 1, 1),
-           seq(2000 - 100, 2000 - 1, 1)))
-
+# rotations
 
 scenario <- c("Now", "More", "Equal")
 
 stock <- c("conv_high","conv_low","org")
 
 field <- c("4ha","7ha","9ha")
+
+crop_rot <- read.table("data/long_juan.txt", 
+                       header =T, dec= ".", sep="\t",
+                       na.strings = ".") |> 
+  expand_grid(burn_init,init_landuse)
+
+init_tbl <- data.frame(
+  burn_init=as.factor(c(rep(10,10),rep(30,30),rep(100,100))),
+  rot_cycle=0,
+  year=c(seq(2000 - 10, 2000 - 1, 1),
+           seq(2000 - 30, 2000 - 1, 1),
+           seq(2000 - 100, 2000 - 1, 1)))
 
 grid_init <- 
   expand_grid(init_tbl,init_landuse,scenario,stock,field) |> 
@@ -32,11 +41,6 @@ grid_init <-
                      "GC"='Grass')) |> 
   mutate(rot_year=0)
 
-
-# Initialization period
-
-init_landuse <- c("SB","WW","GC")
-
 # Soil
 
 #JB4 soil profile 
@@ -44,18 +48,15 @@ init_landuse <- c("SB","WW","GC")
 soiltype <- c("JB1", "JB4", "JB6")
 soilCinit <- c("sC0.9", "sC1.5", "sC2.5")
 
-# Cimate
+# Climate
 
 #Foulum
 
-clim <- c("DK", "Foulum", "Vegem")
+clim <- c("DK", "Foulum")#, "Vegem")
 
-# Initialization period
-# arable land 
+
 
 # 30 years
-
-
 # Simulations
 
 tbl_run <-
@@ -65,7 +66,7 @@ tbl_run <-
               clim) |>
   mutate(scn=fct_cross(#c(
       init_landuse,
-      as.factor(rot_cycle),
+      as.factor(burn_init),
       scenario,
       stock,
       field,
@@ -239,9 +240,8 @@ tbl_run <-
     # Plant C14
     "FOMfractionPlantTopLayerC14"= FOMfractionPlantTopLayer,
     "FOMfractionPlantLowerLayerC14"= FOMfractionPlantLowerLayer
-  ) 
-
-tbl_run_test <- tbl_run |> 
+  ) |>
+  #tbl_run_test <- tbl_run |>
   mutate(
     HI = as.numeric(
       recode(
@@ -252,15 +252,13 @@ tbl_run_test <- tbl_run |>
         'Pulses' = 0.42 #from Soy bean
       )
     ),
-    SB = as.numeric(
-      recode(
-        Crop,
-        'Grain' = 0,
-        'Grass' = 0,
-        'Maize' = 0,
-        'Pulses' = 0.5 #from Soy bean
-      )
-    ),
+    SB = as.numeric(recode(
+      Crop,
+      'Grain' = 0,
+      'Grass' = 0,
+      'Maize' = 0,
+      'Pulses' = 0.5 #from Soy bean
+    )),
     RB = as.numeric(
       recode(
         Crop,
@@ -270,7 +268,7 @@ tbl_run_test <- tbl_run |>
         'Pulses' = 0.1 #from Soy bean
       )
     ),
-    RE =as.numeric(
+    RE = as.numeric(
       recode(
         Crop,
         'Grain' = 0.8,
@@ -279,25 +277,139 @@ tbl_run_test <- tbl_run |>
         'Pulses' = 0.8 #from Soy bean
       )
     ),
-    yield_MC= ifelse(is.na(yield_MC), 0 , yield_MC/1000),
+    yield_MC = ifelse(is.na(yield_MC), 0 , yield_MC / 1000),
     
-    yield_CC=ifelse(is.na(yield_CC), 0 , yield_CC/1000),
+    yield_CC = ifelse(is.na(yield_CC), 0 , yield_CC / 1000),
     
-    C_manure=if_else(is.na(C_manure),0,C_manure/1000)) |> 
+    C_manure = if_else(is.na(C_manure), 0 , C_manure / 1000)
+  ) |>
   mutate(
-    'Cresid'=as.numeric(((1/HI)-1-SB)*(yield_MC*0.43)),
-    'Cresid_cc'=as.numeric(((1/HI)-1-SB)*(yield_CC*0.43)),
+    'Cresid' = as.numeric(((1 / HI) - 1 - SB) * (yield_MC * 0.43)),
+    'Cresid_cc' = as.numeric(((1 / HI) - 1 - SB) * (yield_CC * 0.43)),
     
-    'Cbelow'=as.numeric((RB/((1-RB)*HI))*(yield_MC*0.43)),
-    'Cbelow_cc'=as.numeric((RB/((1-RB)*HI))*(yield_CC*0.43))
-  ) |>  
+    'Cbelow' = as.numeric((RB / (( 1 - RB ) * HI)) * (yield_MC * 0.43)),
+    'Cbelow_cc' = as.numeric((RB / (( 1 - RB ) * HI)) * (yield_CC * 0.43))
+  ) |>
   mutate(
-    'Ctop'=ifelse(Cresid<0,0+(RE*Cbelow),Cresid+(RE*Cbelow)) +
-      ifelse(Cresid_cc<0,0+(RE*Cbelow_cc),Cresid_cc+(RE*Cbelow_cc)),
+    'Ctop' = ifelse(Cresid < 0, 0 + (RE * Cbelow), Cresid + (RE * Cbelow)) +
+      ifelse(Cresid_cc < 0, 0 + (RE * Cbelow_cc), Cresid_cc + (RE * Cbelow_cc)),
     
-    'Csub'=(1-RE)*Cbelow+(1-RE)*Cbelow_cc,
+    'Csub' = (1 - RE) * Cbelow + (1 - RE) * Cbelow_cc,
     
-    'Cman'= C_manure
+    'Cman' = C_manure
   )
 
 
+## List with data ---- 
+try_ave_spl <- tbl_run |> 
+  #filter(id %in% as.vector(ok)) |> 
+  group_split(scn)
+
+# Temperature data ----
+
+## DK ----
+
+temp_ave_1874to2010 <- read.csv(
+  "C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/ctool_allo/data/dk_month_temp_1_1874_12_2012.csv",
+  header = TRUE
+) |>  mutate(date = lubridate::my(Date), dk_tem = temp) |>
+  mutate(date = lubridate::as_date(date))
+
+temp_ave_2011to2021 <-
+  read.csv(
+    "C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/ctool_allo/data/dk_month_temp_1_2011_12_2021.csv",
+    header = TRUE,
+    sep = ";"
+  ) |>
+  mutate(date = lubridate::dmy(DateTime),
+         dk_tem = Middel) |>
+  mutate(date = lubridate::as_date(date))#|>
+# mutate(date = lubridate::my(date))
+
+temp_ave <- bind_rows(temp_ave_1874to2010,temp_ave_2011to2021) |> 
+  select(date,dk_tem) |> 
+  mutate(date=lubridate::as_date(date)) |> 
+  filter(#date>='1990-01-01'
+         #date>='1970-01-01'
+         date>='1900-01-01' 
+         & date<='2020-12-31')
+
+write.table(
+  temp_ave$dk_tem,
+  "data/temp_DK100.txt",
+  col.names = FALSE,
+  sep = "\t",
+  row.names = FALSE
+)
+
+
+## Foulum ----
+
+library(readxl)
+
+daily_Fou_to2013 <-
+  read.csv("C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/temperature/Daily_Foulum_1987_01_01_to_2013_12_31.csv",
+     header = TRUE) |>  mutate(date = lubridate::ymd(date))
+
+
+daily_Fou_from2014 <-read.csv(
+  "C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/temperature/Daily_Foulum_1_1_2014_to_1_1_2022.csv", 
+  header = TRUE) |> mutate(date = lubridate::ymd(lubridate::dmy(date)))
+
+monthly_Fou_1987_2022 <-
+  bind_rows(daily_Fou_to2013, daily_Fou_from2014)  |>  mutate(
+    month = lubridate::month(date),
+    year = lubridate::year(date)
+  ) |> 
+  group_by(year, month)  |> 
+  summarise(fou_tem = mean(temp)) |>  
+  mutate(date=lubridate::ym(paste(year,month, sep = "-")))
+
+# data_jo <- data_jo |>  mutate(
+#   date=seq(from=lubridate::my("01-1966"),
+#            to=lubridate::my("12/2020"),
+#            by="month"))
+
+monthly_Fou_1987_2022 <-
+  bind_rows(daily_Fou_to2013, daily_Fou_from2014)  |>  mutate(
+    month = lubridate::month(date),
+    year = lubridate::year(date)
+  ) |> 
+  group_by(year, month) |> 
+  summarise(fou_tem = mean(temp)) |>  
+  mutate(date=lubridate::ym(paste(year,month, sep = "-")))
+
+monthly_DK_1874_2010 <- 
+  read.csv("C:/Users/au710823/OneDrive - Aarhus universitet/ctool1st2022/temperature/Monthly_Denmark_1_1874_to_12_2010.csv",
+           header = TRUE) |>  mutate(date = lubridate::my(Date),
+                                     dk_tem=temp)
+all_temp <-
+  full_join(monthly_DK_1874_2010, monthly_Fou_1987_2022, by = 'date')
+
+train_temp <-
+  inner_join(monthly_DK_1874_2010, monthly_Fou_1987_2022, by = 'date')
+
+cor(train_temp$dk_tem,
+    train_temp$fou_tem)
+
+plot(train_temp$dk_tem,
+     train_temp$fou_tem)
+
+reg_t <- lm(fou_tem~dk_tem,train_temp);reg_t
+
+summary(reg_t)
+
+all_temp <- all_temp |>  mutate(
+  tem_ok=if_else(is.na(fou_tem),(-0.4714+0.9875*dk_tem),fou_tem))
+
+
+temp_fou <- all_temp |>   filter(
+  between(date, as.Date("1900-01-01"), as.Date("2020-12-31")))
+
+write.table(
+  temp_fou$tem_ok,
+  "data/temp_fou100.txt",
+  col.names = FALSE,
+  sep = "\t",
+  row.names = FALSE
+)
