@@ -40,7 +40,7 @@ data_build_plot <- function(i){
       [FOM]
       FOMdecompositionrate", paste(0.12),
     "
-      clayfraction", paste(unique(i$clayfraction)),
+      clayfraction", paste(unique(i$Crop_clayfraction)),
     "
       tF", paste(0.003),
     "
@@ -58,7 +58,7 @@ data_build_plot <- function(i){
       [FOM]
       FOMdecompositionrate", paste(0.12),
     "
-      clayfraction", paste(unique(i$clayfraction)),
+      clayfraction", paste(unique(i$Crop_clayfraction)),
     "
       tF", paste(0),
     "
@@ -74,7 +74,7 @@ data_build_plot <- function(i){
       [FOM]
       FOMdecompositionrate", paste(0),
     "
-      clayfraction", paste(unique(i$clayfraction)),
+      clayfraction", paste(unique(i$Crop_clayfraction)),
     "
       tF", paste(0),
     "
@@ -94,7 +94,7 @@ data_build_plot <- function(i){
       [FOM]
       FOMdecompositionrate", paste(0),
     "
-      clayfraction", paste(unique(i$clayfraction)),
+      clayfraction", paste(unique(i$Crop_clayfraction)),
     "
       tF", paste(0),
     "
@@ -123,7 +123,10 @@ data_build_plot <- function(i){
   input <- my_input
   #writeLines(my_input, sep = "\t")
   
-  return(list(scn_name,data,input))
+  
+  tempfile <- paste(unique(i$tempfile), sep="")
+  
+  return(list(scn_name,data,input,tempfile))
   
 }
 
@@ -131,4 +134,4 @@ data_build_plot <- function(i){
 
 aver_plot <- lapply(try_ave_spl,data_build_plot)
 
-saveRDS(aver_plot, "aver_plot_Kl2023.RDS")
+saveRDS(aver_plot, "data/aver_plot_Kl2023.RDS")

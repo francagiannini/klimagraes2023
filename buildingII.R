@@ -78,7 +78,8 @@ tbl_run <-
     sep = "_"
   ),
   soil=fct_cross(soiltype,soilCinit,
-                 sep = "_"))
+                 sep = "_"),
+  tempdata=fct_cross(clim, burn_init, sep = "_"))
 
 #Parameters list----
 #inp$`[Parameters]`
@@ -275,8 +276,16 @@ tbl_run <-
         'Grass' = 0.9,
         'Maize' = 0.8,
         'Pulses' = 0.8 #from Soy bean
-      )
-    ),
+      )),
+      tempfile = recode(
+        tempdata,
+        DK_10="temp_DK10.txt",  
+        Foulum_10="temp_fou10.txt",     
+        DK_100="temp_DK100.txt", 
+        Foulum_100="temp_fou100.txt",      
+        DK_30="temp_DK30.txt",  
+        Foulum_30="temp_fou30.txt"),
+    
     yield_MC = ifelse(is.na(yield_MC), 0 , yield_MC / 1000),
     
     yield_CC = ifelse(is.na(yield_CC), 0 , yield_CC / 1000),
