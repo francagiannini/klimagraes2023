@@ -1,6 +1,6 @@
 library(tidyverse)
 
-aver_hal <- readRDS("aver_hal.RDS")
+aver_hal <- readRDS("data/aver_plot_Kl2023.RDS")
 
 #location folder
 
@@ -8,7 +8,7 @@ out_func <- function(i) {
   
   #browser()
   
-  loc_folder <- "C:\\Users\\au710823\\Dropbox\\Franca\\Aarhus\\ctool_II_hal\\"
+  loc_folder <- "output/"
   
   #Read 
   
@@ -22,7 +22,7 @@ out_func <- function(i) {
     header = TRUE
   )
   
-  CO2 <- CO2 %>% select(
+  CO2 <- CO2 |> select(
     "Foml1","Foml2",
     "Huml1","Huml2",
     "Roml1","Roml2"
@@ -56,7 +56,7 @@ out_func <- function(i) {
       "%","total(2,1)"
     )
   
-  tot_amount <- tot_amount %>% dplyr::select(
+  tot_amount <- tot_amount |> dplyr::select(
     'fomcPlant(1,1)','humcPlant(1,1)','romcPlant(1,1)',
     'fomcManure(1,1)','humcManure(1,1)','romcManure(1,1)',
     'total(1,1)',
@@ -79,12 +79,12 @@ out_func <- function(i) {
     row.names = NULL
   )
   
-  transport <- transport %>% select(
+  transport <- transport |> select(
     'Fom','Hum','Rom'
   )
   
   
-  in_C <- i[[2]] %>% select(
+  in_C <- i[[2]]  |>  select(
     'Carbon deposited in the topsoil (t/ha)',
     'C deposited in the subsoil (t/ha)',
     'C deposited in the topsoil from manure (tC ha-1)'
