@@ -1,5 +1,7 @@
 library(tidyverse)
 
+setwd("D:/Franca/klimagraes2023")
+
 aver_hal <- readRDS("data/aver_plot_Kl2023.RDS")
 
 #location folder
@@ -7,9 +9,7 @@ aver_hal <- readRDS("data/aver_plot_Kl2023.RDS")
 out_func <- function(i) {
   
   #browser()
-  
-  loc_folder <- "output/"
-  
+  loc_folder <- "output_0702/"
   #Read 
   
   CO2 <- read.csv(
@@ -104,11 +104,11 @@ out_func <- function(i) {
 
 out_list <- lapply(aver_hal, out_func)
 
-out_tbl_hal <- do.call(rbind, out_list)
+out_tbl<- do.call(rbind, out_list)
 
-dim(out_tbl_hal)
+dim(out_tbl)
 
-saveRDS(out_tbl_hal,"out_tbl_hal.RDS")
+saveRDS(out_tbl,"out_tbl.RDS")
 
 #check
-nrow(out_tbl_hal)==((3*3*3*9*3)*55)+((3*3*3*9*3)*125)
+#nrow(out_tbl_hal)==((3*3*3*9*3)*55)+((3*3*3*9*3)*125)

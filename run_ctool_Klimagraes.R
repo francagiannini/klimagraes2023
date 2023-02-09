@@ -1,11 +1,12 @@
 # take aver write the file scenarios and then run the functions 
+aver_plot
 
 run_in_folder <- function(i) {
   #browser()
   # Make a folder with scenario ID name
   folder_name <-
     paste(
-      "O:\\Tech_AGRO\\Jornaer\\Franca\\klimagraes2023/output/",
+      "D:/Franca/klimagraes2023/output_0702/",
       i[[1]],
       sep = ""
     )
@@ -31,11 +32,15 @@ run_in_folder <- function(i) {
   # Make runscenarios .txt 
   
   runscn <-
-    c(paste("input", paste(folder_name, "\\input.txt", sep = ""), sep = "\t"),
+    c(
+      paste("input", paste(folder_name, "\\input.txt", sep = ""), sep = "\t"),
       paste("data", paste(folder_name, "\\data.txt", sep = ""), sep = "\t"),
-      paste("TemperatureData",
-            paste("O:\\Tech_AGRO\\Jornaer\\Franca\\klimagraes2023\\data/",
-                  i[[4]], sep =""), sep = "\t"),
+      paste(
+        "TemperatureData",
+        paste("D:/Franca/klimagraes2023/data/",
+              i[[4]], sep = ""),
+        sep = "\t"
+      ),
       paste("outputDir", paste(folder_name, "\\", sep = ""),  sep = "\t")
     )
   
@@ -58,9 +63,9 @@ run_in_folder <- function(i) {
   # copy ctool app
   
   file.copy(
-    from = "O:\\Tech_AGRO\\Jornaer\\Franca\\klimagraes2023/data/ctool2.3.exe",
+    from = "D:/Franca/klimagraes2023/data/ctool2.3.exe",
     to = paste(folder_name,
-               "\\ctool2.3.exe",
+               "/ctool2.3.exe",
                sep = ""))
   
   # Execute .exe in each folder
@@ -75,11 +80,9 @@ run_in_folder <- function(i) {
                            "\\ctool2.3.exe",
                            sep = ""))
   
-  setwd("O:\\Tech_AGRO\\Jornaer\\Franca\\klimagraes2023")
+  setwd("D:\\Franca/klimagraes2023/")
   
 }
 
-
-#aver_plot <- readRDS("aver_plot.RDS")
-
+#aver_plot <- readRDS("data/aver_plot_Kl2023.RDS")
 lapply(aver_plot, run_in_folder)

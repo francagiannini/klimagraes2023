@@ -13,14 +13,17 @@ burn_init <- c("10","30","100")
 
 scenario <- c("Now", "More", "Equal")
 
-stock <- c("conv_high","conv_low","org")
+stock <- c("conv.high","conv.low","org")
 
 field <- c("4ha","7ha","9ha")
 
 crop_rot <- read.table("data/long_juan.txt", 
                        header =T, dec= ".", sep="\t",
                        na.strings = ".") |> 
-  expand_grid(burn_init,init_landuse)
+  mutate(stock=recode(stock, 
+             conv_high="conv.high",  conv_low="conv.low", 
+             org_org="org")) |> 
+  expand_grid(burn_init,init_landuse) 
 
 init_tbl <- data.frame(
   burn_init=as.factor(c(rep(10,10),rep(30,30),rep(100,100))),
@@ -422,3 +425,4 @@ write.table(
   sep = "\t",
   row.names = FALSE
 )
+

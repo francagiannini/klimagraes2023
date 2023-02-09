@@ -3,7 +3,7 @@
 data_build_plot <- function(i){
   #browser()
   #ID
-  scn_name <- paste(unique(i$scn)#, unique(i$scn_name), sep = "_"
+  scn_name <- paste(unique(i$scn)#, sep = "_"#, unique(i$scn_name)
                     )
   #data
   data <- as.data.frame(i)
