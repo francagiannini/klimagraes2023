@@ -5,7 +5,7 @@ library(agricolae)
 library(ggpubr)
 library(gridExtra)
 
-#### output ----
+#### data output ----
 out_tbl <- readRDS("out_tbl.RDS")
 
 #head(out_tbl)
@@ -15,8 +15,7 @@ out_tbl_a <-out_tbl |> separate(
   c("init_landuse",
     "burn_init",
     "scenario",
-    "stock1",
-    "stock2",
+    "stock",
     "field",
     "soiltype",
     "soilCinit",
@@ -30,45 +29,130 @@ out_tbl_a <-out_tbl |> separate(
     transport_tot=Fom+Hum+Rom
   )
 
-##### Long term scatter -----
+out_farm <- out_tbl_a |>
+  pivot_wider(
+    names_from = field,
+    values_from = c(
+      `Carbon deposited in the topsoil (t/ha)`
+      ,`C deposited in the subsoil (t/ha)`
+      ,`C deposited in the topsoil from manure (tC ha-1)`
+      ,`totalC_topsoil`
+      ,`totalC_subsoil`
+      ,`SoilC_tot`
+      ,`CO2_tot`
+    )
+  ) |> unique() |>
+  group_by(init_landuse,
+           burn_init,
+           scenario,
+           stock,
+           soiltype,
+           soilCinit,
+           clim,
+           year) |> 
+  mutate(
+    "Carbon deposited in the topsoil (t/ha)"=
+      mean(`Carbon deposited in the topsoil (t/ha)_4ha`,na.rm=TRUE)*0.2 +
+      mean(`Carbon deposited in the topsoil (t/ha)_7ha`,na.rm=TRUE)*0.35+
+      mean(`Carbon deposited in the topsoil (t/ha)_9ha`,na.rm=TRUE)*0.45
+    ,"C deposited in the subsoil (t/ha)"=
+      mean(`C deposited in the subsoil (t/ha)_4ha`,na.rm=TRUE)*0.2 +
+      mean(`C deposited in the subsoil (t/ha)_7ha`,na.rm=TRUE)*0.35 + 
+      mean(`C deposited in the subsoil (t/ha)_9ha`,na.rm=TRUE)*0.45
+    ,"C deposited in the topsoil from manure (tC ha-1)"=
+      mean(`C deposited in the topsoil from manure (tC ha-1)_4ha`,na.rm=TRUE)*0.2 +
+      mean(`C deposited in the topsoil from manure (tC ha-1)_7ha`,na.rm=TRUE)*0.35 +
+      mean(`C deposited in the topsoil from manure (tC ha-1)_9ha`,na.rm=TRUE)*0.45
+    ,"totalC_topsoil"= 
+      mean(`totalC_topsoil_4ha`,na.rm=TRUE)*0.2 +
+      mean(`totalC_topsoil_7ha`,na.rm=TRUE)*0.35+
+      mean(`totalC_topsoil_9ha`,na.rm=TRUE)*0.45
+    ,"totalC_subsoil"=
+      mean(`totalC_subsoil_4ha`,na.rm=TRUE)*0.2 +
+      mean(`totalC_subsoil_7ha`,na.rm=TRUE)*0.35+
+      mean(`totalC_subsoil_9ha`,na.rm=TRUE)*0.45
+    ,"SoilC_tot"=
+      mean(`SoilC_tot_4ha`,na.rm=TRUE)*0.2 +
+      mean(`SoilC_tot_7ha`,na.rm=TRUE)*0.35+
+      mean(`SoilC_tot_9ha`,na.rm=TRUE)*0.45
+    ,"CO2_tot"=
+      mean(`CO2_tot_4ha`,na.rm=TRUE)*0.2 +
+      mean(`CO2_tot_7ha`,na.rm=TRUE)*0.35 +
+      mean(`CO2_tot_9ha`,na.rm=TRUE)*0.45
+    ) |> 
+select(`Carbon deposited in the topsoil (t/ha)`
+       ,`C deposited in the subsoil (t/ha)`
+       ,`C deposited in the topsoil from manure (tC ha-1)`
+       ,`totalC_topsoil`
+       ,`totalC_subsoil`
+       ,`SoilC_tot`
+       ,`CO2_tot`)
+  
+  
 
-out_tbl_a |> sample_frac(0.2)|> ggplot(aes(y=SoilC_tot, x=year))+
+# colors ----
+depth_col =c("#9C5712"=,"#E49D56")
+
+stock_col = c("conv.high"=
+                "#01364F",
+              "conv.low"=
+                "#009E2A", 
+              "org"= 
+                "#D34E00")
+
+table(out_a$"stock")
+
+# Long term scatter -----
+
+out_tbl_a |> sample_frac(0.5)|> ggplot(aes(y=SoilC_tot, x=year))+
   geom_point()+
-  scale_x_continuous(breaks=seq(1866,2020,14))+
-  scale_y_continuous(breaks =seq(40,180,20))+
+  scale_x_continuous(breaks=seq(1900,2020,14))+
+  scale_y_continuous(breaks =seq(40,200,20))+
   theme_bw()+
   ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
 
-out_tbl_a |> ggplot(aes(y=totalC_topsoil, x=year))+
-  geom_point()+
-  scale_x_continuous(breaks=seq(1866,2020,14))+
-  scale_y_continuous(breaks =seq(40,180,20))+
-  theme_bw()+
-  
-  ylab("Topsoil Total C [Mg/ha m]")
+out_tbl_a |> 
+  ggplot(aes(y=`Carbon deposited in the topsoil (t/ha)`, x=year))+
+  geom_point(aes(col=(stock), shape=(field), size=1, alpha=0.3))+
+  scale_x_continuous(breaks=seq(1900,2020,14))+
+  scale_color_manual(values=stock_col)+
+  #scale_y_continuous(breaks =seq(40,200,20))+
+  theme_bw()
 
-##### filter from 1996 to 2020 ----
+out_tbl_a |> sample_frac(0.5)|> ggplot(aes(y=SoilC_tot, x=year))+
+  geom_point()+
+  scale_x_continuous(breaks=seq(1900,2020,14))+
+  scale_y_continuous(breaks =seq(40,200,20))+
+  theme_bw()+
+  ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
+
+##### filter from 2000 to 2020 ----
 
 out_a <- out_tbl_a |> mutate(year2=strptime(year,"%Y")) |> 
-  filter(year2 > "1996-05-02" & year2 <"2020-06-02")
+  filter(year > 2000 & year <2020)
 
-saveRDS(out_a,"out_a_hal.RDS")
+# saveRDS(out_a,"out_a_hal.RDS")
+# 
+# write.table(out_a,"out_a_hal.txt", sep = "\t", dec=".")
 
-write.table(out_a,"out_a_hal.txt", sep = "\t", dec=".")
+
 
 #### Soil C -----
 out_a |> ggplot(aes(y=SoilC_tot, x=year))+
   geom_point()+
-  scale_x_continuous(breaks=seq(1866,2020,14))+
-  scale_y_continuous(breaks =seq(40,180,20))+
-  theme_bw()+ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
+  scale_x_continuous(breaks=seq(2000,2020,14))+
+  scale_y_continuous(breaks =seq(40,200,20))+
+  theme_bw()+
+  ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
 
 #### top vs sub
-out_a |> ggplot(aes(y=totalC_topsoil, x=totalC_subsoil, group= soilCinit))+
-  geom_point()+
-  geom_smooth(method="lm")+
-  stat_cor(method = "pearson")+
-  theme_bw()
+out_a |> ggplot(aes(y=totalC_topsoil, x=totalC_subsoil, group= soilCinit)) +
+  geom_point() +
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson") +
+  theme_bw() +
+  ylab("Topsoil Total C [Mg/ha m]")
+
 
 out_a |> group_by(croprot_man,soilCinit,initC) |> filter(
   year2 > "2015-05-02" & year2 <"2020-06-02") |> summarise(
