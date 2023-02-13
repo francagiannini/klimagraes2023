@@ -79,16 +79,16 @@ out_farm <- out_tbl_a |>
       mean(`CO2_tot_4ha`,na.rm=TRUE)*0.2 +
       mean(`CO2_tot_7ha`,na.rm=TRUE)*0.35 +
       mean(`CO2_tot_9ha`,na.rm=TRUE)*0.45
-    ) |> 
-select(`Carbon deposited in the topsoil (t/ha)`
-       ,`C deposited in the subsoil (t/ha)`
-       ,`C deposited in the topsoil from manure (tC ha-1)`
-       ,`totalC_topsoil`
-       ,`totalC_subsoil`
-       ,`SoilC_tot`
-       ,`CO2_tot`)
-  
-  
+  ) |> 
+  select(`Carbon deposited in the topsoil (t/ha)`
+         ,`C deposited in the subsoil (t/ha)`
+         ,`C deposited in the topsoil from manure (tC ha-1)`
+         ,`totalC_topsoil`
+         ,`totalC_subsoil`
+         ,`SoilC_tot`
+         ,`CO2_tot`)
+
+
 
 # colors ----
 depth_col =c("#9C5712"=,"#E49D56")
@@ -99,7 +99,7 @@ stock_col = c("conv.high"=
                 "#009E2A", 
               "org"= 
                 "#D34E00")
-
+              
 table(out_a$"stock")
 
 # Long term scatter -----
@@ -307,7 +307,7 @@ dif |> group_by(soilCinit,croprot_man,initC,hal) |>
 
 
 dif |> ggplot(aes(y=dif_topC1995, x=initC, 
-                   fill=croprot_man)) +
+                  fill=croprot_man)) +
   geom_boxplot()+
   facet_grid(hal ~ soilCinit) +
   scale_fill_manual(name="Crop rotation", 
@@ -461,8 +461,8 @@ tm_cl <- kmeans(temp_yr[,-1],10)
 out_a_co$tm_cl <- tm_cl$cluster
 
 co2_plot <- out_a_co |> ggplot(aes(y=CO2_tot, x=year, 
-                                    #group=croprot_man, soilCinit,
-                                    col=croprot_man))+
+                                   #group=croprot_man, soilCinit,
+                                   col=croprot_man))+
   geom_point(size=0.5)+
   geom_smooth(se=FALSE)+
   geom_smooth(aes(y=(yr.mean/35)), 
@@ -481,8 +481,8 @@ co2_plot <- out_a_co |> ggplot(aes(y=CO2_tot, x=year,
 
 
 tr_plot <- out_a_co |> ggplot(aes(y=transport_tot, x=year, 
-                                   #group=croprot_man, soilCinit,
-                                   col=croprot_man))+
+                                  #group=croprot_man, soilCinit,
+                                  col=croprot_man))+
   geom_point(size=0.5)+
   geom_smooth(se=FALSE)+
   # geom_smooth(aes(y=(yr.mean/35)), 
@@ -537,8 +537,8 @@ vca |> group_by(grp) |> summarise(
 
 
 out_a |> ggplot(aes(y=transport_tot, x=year, 
-                     group=croprot_man, soilCinit,
-                     col=croprot_man))+
+                    group=croprot_man, soilCinit,
+                    col=croprot_man))+
   geom_point(size=0.5)+
   geom_smooth()+
   geom_line(aes(y=(temp/1000)+0.02), col="black")+
@@ -623,7 +623,7 @@ out_a |> filter(year2 > "2015-05-02" & year2 < "2020-06-02") |>
     Cmanmean = mean(`C deposited in the topsoil from manure (tC ha-1)`),
     Cmansd = sd(`C deposited in the topsoil from manure (tC ha-1)`)
   ) |> filter(soiltype == 'JB4' &
-                 soilCinit == 'sC1.5' & inittime == '30') |>
+                soilCinit == 'sC1.5' & inittime == '30') |>
   pivot_longer(cols=c(BCtopsum,ACsubsum,CCmansum), names_to = "Frac", values_to = "Cinp") |> 
   ggplot(aes(y = Cinp,
              x = fct_reorder(interaction(croprot_man, hal,  sep = " "), Cinp),
