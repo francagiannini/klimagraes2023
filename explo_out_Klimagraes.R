@@ -10,7 +10,7 @@ out_tbl <- readRDS("out_tbl.RDS")
 
 #head(out_tbl)
 
-out_tbl_a <-out_tbl |> separate(
+out_tbl <- out_tbl |> separate(
   ID, 
   c("init_landuse",
     "burn_init",
@@ -29,7 +29,7 @@ out_tbl_a <-out_tbl |> separate(
     transport_tot=Fom+Hum+Rom
   )
 
-out_farm <- out_tbl_a |>
+out_farm <- out_tbl |>
   pivot_wider(
     names_from = field,
     values_from = c(
@@ -91,7 +91,7 @@ out_farm <- out_tbl_a |>
 
 
 # colors ----
-depth_col =c("#9C5712"=,"#E49D56")
+depth_col =c(totalC_topsoil="#9C5712",totalC_subsoil="#E49D56")
 
 stock_col = c("conv.high"=
                 "#01364F",
@@ -100,36 +100,105 @@ stock_col = c("conv.high"=
               "org"= 
                 "#D34E00")
               
-table(out_a$"stock")
+#table(out_a$"stock")
 
 # Long term scatter -----
 
-out_tbl_a |> sample_frac(0.5)|> ggplot(aes(y=SoilC_tot, x=year))+
+## SOC 1mts ----
+
+out_farm |> #sample_frac(0.5)|> 
+  ggplot(aes(y=SoilC_tot, x=year))+
   geom_point()+
   scale_x_continuous(breaks=seq(1900,2020,14))+
   scale_y_continuous(breaks =seq(40,200,20))+
   theme_bw()+
   ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
 
-out_tbl_a |> 
-  ggplot(aes(y=`Carbon deposited in the topsoil (t/ha)`, x=year))+
-  geom_point(aes(col=(stock), shape=(field), size=1, alpha=0.3))+
-  scale_x_continuous(breaks=seq(1900,2020,14))+
-  scale_color_manual(values=stock_col)+
-  #scale_y_continuous(breaks =seq(40,200,20))+
+### C inputs ----
+
+out_farm |>
+  filter(year > 2015 & year < 2020  &
+           burn_init == "10" &
+           clim == "DK" &
+         soiltype == "JB1" &
+         soilCinit == "sC0.9" &
+           init_landuse == "GC") |>
+  ggplot(aes(y = `C deposited in the subsoil (t/ha)`, x = year)) +
+  geom_point(aes(col = stock, shape = scenario),
+             alpha = 0.3,
+             size = 5) +
+  #geom_smooth(aes(group=interaction(scenario,stock)))+
+  scale_x_continuous(#minor_breaks  = seq(2000, 2020, 1),
+                     breaks  = seq(2015, 2020, 1)
+                     ) +
+  scale_color_manual(values = stock_col) +
   theme_bw()
 
-out_tbl_a |> sample_frac(0.5)|> ggplot(aes(y=SoilC_tot, x=year))+
-  geom_point()+
-  scale_x_continuous(breaks=seq(1900,2020,14))+
-  scale_y_continuous(breaks =seq(40,200,20))+
+inp_farm_summ <- 
+  out_farm |>
+  # filter(year > 2015 & year <= 2020  &
+  #          burn_init == "10" &
+  #          clim == "DK" &
+  #          soiltype == "JB1" &
+  #          soilCinit == "sC0.9" &
+  #          init_landuse == "GC") |>
+  group_by(scenario,stock,year,init_landuse) |> 
+  summarise(
+    I_topsoil= mean(`Carbon deposited in the topsoil (t/ha)`),
+    II_manure = mean(`C deposited in the topsoil from manure (tC ha-1)`),
+    III_subsoil=mean(`C deposited in the subsoil (t/ha)`)
+  ) 
+
+inp_farm_summ |> 
+  filter(year > 2015 & year <= 2020 & init_landuse=="SB") |> 
+  pivot_longer(cols = c(
+    I_topsoil,
+    II_manure,
+    III_subsoil
+  ),
+  names_to = "sources",
+  values_to = "C input (tC/ha)") |> 
+  ggplot() +
+  geom_col(aes(y = `C input (tC/ha)`, x=year, 
+               fill=sources)) +
+  facet_grid(scenario~stock) +
+  scale_fill_manual(values=c("#9C5712","#3B1800","#E49D56" ))+
+  theme_bw()
+
+# initialization
+inp_farm_summ |> 
+  filter(year==1901 & scenario == "Now" & stock == "org") |> 
+pivot_longer(cols = c(
+                        I_topsoil,
+                        II_manure,
+                        III_subsoil
+                        ),
+               names_to = "sources",
+               values_to = "C input (tC/ha)") |> 
+  ggplot() +
+  geom_col(aes(y = `C input (tC/ha)`, x=init_landuse, 
+               fill=sources)) +
+  #facet_grid(stock+scenario~init_landuse) +
+  scale_fill_manual(values=c("#9C5712","#3B1800","#E49D56" ))+
+  theme_bw()+
+  xlab("Initialization period land use")
+
+
+
+out_farm |> #sample_frac(0.5)|> 
+  filter(year > 2000 & year <= 2020) |>
+  ggplot(aes(y=SoilC_tot, x=year))+
+  geom_point(aes(col = stock, shape = scenario),
+             alpha = 0.3,
+             size = 2) +
+  scale_x_continuous(breaks=seq(2000,2020,4))+
+  scale_color_manual(values = stock_col) +
+  facet_grid(~soilCinit)+
+  #scale_y_continuous(breaks =seq(40,200,20))+
   theme_bw()+
   ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
 
-##### filter from 2000 to 2020 ----
 
-out_a <- out_tbl_a |> mutate(year2=strptime(year,"%Y")) |> 
-  filter(year > 2000 & year <2020)
 
 # saveRDS(out_a,"out_a_hal.RDS")
 # 
