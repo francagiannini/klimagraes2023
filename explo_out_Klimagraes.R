@@ -88,7 +88,8 @@ out_farm <- out_tbl |>
          ,`SoilC_tot`
          ,`CO2_tot`)
 
-
+saveRDS(out_farm, 
+        "O:/Tech_AGRO/Jornaer/Franca/klimagraes2023/data/out_farm_12_02.RDS")
 
 # colors ----
 depth_col =c(totalC_topsoil="#9C5712",totalC_subsoil="#E49D56")
@@ -184,27 +185,47 @@ pivot_longer(cols = c(
   xlab("Initialization period land use")
 
 
+# outputs STOCK
+
+#smooth 
 
 out_farm |> #sample_frac(0.5)|> 
   filter(year > 2000 & year <= 2020) |>
-  ggplot(aes(y=SoilC_tot, x=year))+
-  geom_point(aes(col = stock, shape = scenario),
-             alpha = 0.3,
-             size = 2) +
-  scale_x_continuous(breaks=seq(2000,2020,4))+
+  ggplot(aes(y=SoilC_tot, x=year, group=interaction(stock, scenario, soilCinit)))+
+  # geom_point(aes(col = stock, shape = scenario),
+  #            alpha = 0.3,
+  #            size = 2) +
+  geom_smooth(aes(col = stock, lty = scenario), alpha = 0.1)+
+  scale_x_continuous(breaks=seq(2000,2020,5))+
   scale_color_manual(values = stock_col) +
-  facet_grid(~soilCinit)+
+  #facet_grid(soilCinit~.)+
+  #scale_y_continuous(breaks =seq(40,200,20))+
+  theme_bw()+
+  ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
+
+# not that smooth 
+out_farm |> #sample_frac(0.5)|> 
+  filter(year > 2000 & year <= 2020) |>
+  group_by(stock, scenario, soilCinit, year) |> 
+  summarize(mean = mean(SoilC_tot),
+            sd   = sd(SoilC_tot),
+            mean_p2sd = mean + 2 * sd,
+            mean_m2sd = mean - 2 * sd) |> 
+  ggplot(aes(y=mean, x=year, group=interaction(stock, scenario, soilCinit)))+
+  geom_point(aes(col = stock, shape = scenario),
+             alpha = 0.6) +
+  geom_line(aes(col = stock, lty = scenario))+
+  scale_x_continuous(breaks=seq(2000,2020,5))+
+  scale_color_manual(values = stock_col) +
+  #facet_grid(soilCinit~.)+
   #scale_y_continuous(breaks =seq(40,200,20))+
   theme_bw()+
   ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
 
 
-
 # saveRDS(out_a,"out_a_hal.RDS")
 # 
 # write.table(out_a,"out_a_hal.txt", sep = "\t", dec=".")
-
-
 
 #### Soil C -----
 out_a |> ggplot(aes(y=SoilC_tot, x=year))+
@@ -264,12 +285,15 @@ cor(out_a$totalC_topsoil, out_a$totalC_subsoil)
 # Total amount of C (Mg ha-1m-1) in topsoil out_tbl$`total(1,1)`
 
 SOC_vca<-lme4::lmer(
-  totalC_topsoil~1+year+
-    (1|hal)+(1|soilCinit)+(1|soiltype)+(1|croprot_man)+(1|inittime)+(1|initC)
+  totalC_subsoil~1+year+
+    (1|stock)+(1|scenario)+
+    (1|init_landuse)+(1|burn_init)+
+    (1|soiltype)+(1|soilCinit)+
+    (1|clim)
   ,na.action=na.omit
   ,REML=T
   ,control=lmerControl(optimizer="bobyqa")
-  ,data=out_a)
+  ,data=out_farm)
 
 summary(SOC_vca)
 
@@ -279,29 +303,29 @@ vca |> group_by(grp) |> summarise(
   varprop = vcov / sum(vca$vcov) * 100) |> arrange(
     varprop, grp)
 
-options(contrasts=c("contr.sum", "contr.poly"))
-
-
 ##### Linear model SOC----
 
+options(contrasts=c("contr.sum", "contr.poly"))
+
 SoilC_reg <- lm(
-  totalC_topsoil~+year+soiltype+soilCinit+croprot_man+inittime+initC+hal+
-    hal*year+year*initC+year*initC*hal+year*soilCinit+year*croprot_man, #+year*inittime+year*soiltype,
-  data = out_a)
+  SoilC_tot~-1+as.numeric(year)+soilCinit+stock+scenario+soiltype+burn_init+init_landuse+
+    as.numeric(year)*soilCinit+as.numeric(year)*stock+
+    as.numeric(year)*scenario+as.numeric(year)*soiltype+
+    as.numeric(year)*scenario*stock
+    #hal*year+year*initC+year*initC*hal+year*soilCinit+year*croprot_man, #+year*inittime+year*soiltype,
+  ,data = out_farm)
 
 anova(SoilC_reg)
 summary(SoilC_reg)
 
-
-
-LSD.test(SoilC_reg, c("year:croprot_man"), 
+LSD.test(SoilC_reg, c("year:stock:scenario"), 
          console = TRUE, 
          p.adj="bonferroni", 
          alpha = 0.01)
 
 library(emmeans)#https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
-emtrends(SoilC_reg, pairwise ~ initC:hal, adjust="tukey",var = "year")
+emtrends(SoilC_reg, pairwise ~ stock:scenario, adjust="tukey",var = "year")
 
 
 # SoilC_reg <- lme4::lmer(
