@@ -223,7 +223,7 @@ out_farm |> #sample_frac(0.5)|>
   ylab("Total soil C [ Mg/ha m] (C topsoil + C subsoil)")
 
 
-# saveRDS(out_a,"out_a_hal.RDS")
+saveRDS(out_farm,"out_farm.RDS")
 # 
 # write.table(out_a,"out_a_hal.txt", sep = "\t", dec=".")
 
