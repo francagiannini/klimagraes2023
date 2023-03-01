@@ -6,7 +6,7 @@ run_in_folder <- function(i) {
   # Make a folder with scenario ID name
   folder_name <-
     paste(
-      "D:/Franca/klimagraes2023/output_0702/",
+      "O:/Tech_AGRO/Jornaer/Franca/klimagraes2023/output_2402/",
       i[[1]],
       sep = ""
     )
@@ -37,7 +37,7 @@ run_in_folder <- function(i) {
       paste("data", paste(folder_name, "\\data.txt", sep = ""), sep = "\t"),
       paste(
         "TemperatureData",
-        paste("D:/Franca/klimagraes2023/data/",
+        paste("O:/Tech_AGRO/Jornaer/Franca/klimagraes2023/data/",
               i[[4]], sep = ""),
         sep = "\t"
       ),
@@ -63,7 +63,7 @@ run_in_folder <- function(i) {
   # copy ctool app
   
   file.copy(
-    from = "D:/Franca/klimagraes2023/data/ctool2.3.exe",
+    from = "O:/Tech_AGRO/Jornaer/Franca/klimagraes2023/data/ctool2.3.exe",
     to = paste(folder_name,
                "/ctool2.3.exe",
                sep = ""))
@@ -80,7 +80,7 @@ run_in_folder <- function(i) {
                            "\\ctool2.3.exe",
                            sep = ""))
   
-  setwd("D:\\Franca/klimagraes2023/")
+  setwd("O:/Tech_AGRO/Jornaer/Franca/klimagraes2023/")
   
 }
 

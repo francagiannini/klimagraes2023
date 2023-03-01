@@ -1,5 +1,7 @@
 library(tidyverse)
 
+library(fmsb)
+
 # Crop rotation from Troels ----
 
 # Initialization period
@@ -22,8 +24,35 @@ crop_rot <- read.table("data/long_juan.txt",
                        na.strings = ".") |> 
   mutate(stock=recode(stock, 
              conv_high="conv.high",  conv_low="conv.low", 
-             org_org="org")) |> 
-  expand_grid(burn_init,init_landuse) 
+             org_org="org", "1.50"="org")) |> 
+  expand_grid(burn_init,init_landuse)
+
+  crop_rot |> 
+  filter(rot_cycle=="1") |> 
+  group_by(scenario, stock) |> 
+  summarise(Grain_prop=
+              sum(Crop =="Grain" & field =="4ha")*4+
+              sum(Crop =="Grain" & field =="7ha")*7+
+              sum(Crop =="Grain" & field =="9ha")*9,  
+            Grass_prop=
+              sum(Crop =="Grass" & field =="4ha")*4+
+              sum(Crop =="Grass" & field =="7ha")*7+
+              sum(Crop =="Grass" & field =="9ha")*9,   
+            Maize_prop=
+              sum(Crop =="Maize" & field =="4ha")*4+
+              sum(Crop =="Maize" & field =="7ha")*7+
+              sum(Crop =="Maize" & field =="9ha")*9, 
+            Pulses_prop=
+              sum(Crop =="Pulses" & field =="4ha")*4+
+              sum(Crop =="Pulses" & field =="7ha")*7+
+              sum(Crop =="Pulses" & field =="9ha")*9, 
+            CC_prop=
+              sum(!is.na(C_CC) & field =="4ha")*4+
+              sum(!is.na(C_CC) & field =="7ha")*7+
+              sum(!is.na(C_CC) & field =="9ha")*9
+            )
+
+
 
 init_tbl <- data.frame(
   burn_init=as.factor(c(rep(10,10),rep(30,30),rep(100,100))),
@@ -56,7 +85,6 @@ soilCinit <- c("sC0.9", "sC1.5", "sC2.5")
 #Foulum
 
 clim <- c("DK", "Foulum")#, "Vegem")
-
 
 
 # 30 years
@@ -291,24 +319,82 @@ tbl_run <-
     
     yield_MC = ifelse(is.na(yield_MC), 0 , yield_MC / 1000),
     
-    yield_CC = ifelse(is.na(yield_CC), 0 , yield_CC / 1000),
+    #yield_CC = ifelse(is.na(yield_CC), 0 , yield_CC / 1000),
     
     C_manure = if_else(is.na(C_manure), 0 , C_manure / 1000)
   ) |>
   mutate(
-    'Cresid' = as.numeric(((1 / HI) - 1 - SB) * (yield_MC * 0.43)),
-    'Cresid_cc' = as.numeric(((1 / HI) - 1 - SB) * (yield_CC * 0.43)),
+    'Cresid' = as.numeric(((1 / HI) - 1 - SB) * (yield_MC * 0.45)),
     
-    'Cbelow' = as.numeric((RB / (( 1 - RB ) * HI)) * (yield_MC * 0.43)),
-    'Cbelow_cc' = as.numeric((RB / (( 1 - RB ) * HI)) * (yield_CC * 0.43))
+    'Cbelow' = as.numeric((RB / (( 1 - RB ) * HI)) * (yield_MC * 0.45))
   ) |>
   mutate(
     'Ctop' = ifelse(Cresid < 0, 0 + (RE * Cbelow), Cresid + (RE * Cbelow)) +
-      ifelse(Cresid_cc < 0, 0 + (RE * Cbelow_cc), Cresid_cc + (RE * Cbelow_cc)),
+      ifelse(is.na(C_CC), 0, C_CC),
     
-    'Csub' = (1 - RE) * Cbelow + (1 - RE) * Cbelow_cc,
+    'Csub' = (1 - RE) * Cbelow ,
     
     'Cman' = C_manure
+  )
+
+
+summCinp <- tbl_run |> filter(rot_cycle=="1" & 
+                    init_landuse =="WW" & 
+                    burn_init=="10" &
+                    soiltype== "JB1" &
+                    soilCinit == "sC1.5" & 
+                    clim == "DK") |> 
+  group_by(scenario, stock) |> 
+  summarise(Grain_Ctop =
+            sum(Ctop,Crop =="Grain" & field =="4ha")*4+
+            sum(Ctop,Crop =="Grain" & field =="7ha")*7+
+            sum(Ctop,Crop =="Grain" & field =="9ha")*9,  
+            
+            Grass_Ctop =
+              sum(Ctop,Crop =="Grass" & field =="4ha")*4+
+              sum(Ctop,Crop =="Grass" & field =="7ha")*7+
+              sum(Ctop,Crop =="Grass" & field =="9ha")*9,   
+            
+            Maize_Ctop=
+              sum(Ctop,Crop =="Maize" & field =="4ha")*4+
+              sum(Ctop,Crop =="Maize" & field =="7ha")*7+
+              sum(Ctop,Crop =="Maize" & field =="9ha")*9, 
+            
+            Pulses_Ctop=
+              sum(Ctop,Crop =="Pulses" & field =="4ha")*4+
+              sum(Ctop,Crop =="Pulses" & field =="7ha")*7+
+              sum(Ctop,Crop =="Pulses" & field =="9ha")*9, 
+            
+            CC_Ctop=
+              sum(C_CC, field =="4ha",na.rm = TRUE)*4+
+              sum(C_CC, field =="7ha",na.rm = TRUE)*7+
+              sum(C_CC, field =="9ha",na.rm = TRUE)*9,
+            
+            Grain_Csub =
+              sum(Csub,Crop =="Grain" & field =="4ha")*4+
+              sum(Csub,Crop =="Grain" & field =="7ha")*7+
+              sum(Csub,Crop =="Grain" & field =="9ha")*9,  
+            
+            Grass_Csub=
+              sum(Csub,Crop =="Grass" & field =="4ha")*4+
+              sum(Csub,Crop =="Grass" & field =="7ha")*7+
+              sum(Csub,Crop =="Grass" & field =="9ha")*9,   
+            
+            Maize_Csub=
+              sum(Csub,Crop =="Maize" & field =="4ha")*4+
+              sum(Csub,Crop =="Maize" & field =="7ha")*7+
+              sum(Csub,Crop =="Maize" & field =="9ha")*9, 
+            
+            Pulses_Csub=
+              sum(Csub,Crop =="Pulses" & field =="4ha")*4+
+              sum(Csub,Crop =="Pulses" & field =="7ha")*7+
+              sum(Csub,Crop =="Pulses" & field =="9ha")*9, 
+            
+            Cman=
+              sum(Cman,  field =="4ha")*4+
+              sum(Cman, field =="7ha")*7+
+              sum(Cman, field =="9ha")*9
+            
   )
 
 

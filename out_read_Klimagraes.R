@@ -1,6 +1,8 @@
 library(tidyverse)
 
-setwd("D:/Franca/klimagraes2023")
+#setwd("D:/Franca/klimagraes2023")
+#setwd("")
+
 
 aver_hal <- readRDS("data/aver_plot_Kl2023.RDS")
 
@@ -9,7 +11,7 @@ aver_hal <- readRDS("data/aver_plot_Kl2023.RDS")
 out_func <- function(i) {
   
   #browser()
-  loc_folder <- "output_0702/"
+  loc_folder <- "output_2402/"
   #Read 
   
   CO2 <- read.csv(
@@ -101,7 +103,6 @@ out_func <- function(i) {
 }
 
 #i <- aver[[5]]
-
 out_list <- lapply(aver_hal, out_func)
 
 out_tbl<- do.call(rbind, out_list)

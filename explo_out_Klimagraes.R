@@ -10,6 +10,7 @@ out_tbl <- readRDS("out_tbl.RDS")
 
 #head(out_tbl)
 
+# Field level data ---- 
 out_tbl <- out_tbl |> separate(
   ID, 
   c("init_landuse",
@@ -28,6 +29,7 @@ out_tbl <- out_tbl |> separate(
     CO2_tot= Foml1+Foml2+Huml1+Huml2+Roml1+Roml2,
     transport_tot=Fom+Hum+Rom
   )
+
 
 out_farm <- out_tbl |>
   pivot_wider(
@@ -53,7 +55,7 @@ out_farm <- out_tbl |>
   mutate(
     "Carbon deposited in the topsoil (t/ha)"=
       mean(`Carbon deposited in the topsoil (t/ha)_4ha`,na.rm=TRUE)*0.2 +
-      mean(`Carbon deposited in the topsoil (t/ha)_7ha`,na.rm=TRUE)*0.35+
+      mean(`Carbon deposited in the topsoil (t/ha)_7ha`,na.rm=TRUE)*0.35 +
       mean(`Carbon deposited in the topsoil (t/ha)_9ha`,na.rm=TRUE)*0.45
     ,"C deposited in the subsoil (t/ha)"=
       mean(`C deposited in the subsoil (t/ha)_4ha`,na.rm=TRUE)*0.2 +
@@ -79,6 +81,8 @@ out_farm <- out_tbl |>
       mean(`CO2_tot_4ha`,na.rm=TRUE)*0.2 +
       mean(`CO2_tot_7ha`,na.rm=TRUE)*0.35 +
       mean(`CO2_tot_9ha`,na.rm=TRUE)*0.45
+    ,
+    
   ) |> 
   select(`Carbon deposited in the topsoil (t/ha)`
          ,`C deposited in the subsoil (t/ha)`
